@@ -1,8 +1,8 @@
-name: Android Build
+name: Inspect Repo
 on: workflow_dispatch
 
 jobs:
-  build:
+  inspect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,33 +10,13 @@ jobs:
           repository: armory3d/armortools
           submodules: recursive
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - uses: android-actions/setup-android@v3
-
-      - name: Compile (generates Android Studio project)
+      - name: List root
         run: |
-          cd armorpaint
-          ../armorcore/Kinc/make --from ../armorcore android -g opengl
-
-      - name: Locate generated Gradle project
-        run: find . -maxdepth 5 -iname "gradlew" 2>/dev/null
-
-      - name: Build APK
-        run: |
-          GRADLE_DIR=$(dirname "$(find . -maxdepth 5 -iname 'gradlew' | head -n1)")
-          cd "$GRADLE_DIR"
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ArmorPaint-debug-apk
-          path: '**/app/build/outputs/apk/debug/*.apk'
+          echo "=== Root contents ==="
+          ls -la
+          echo "=== .gitmodules ==="
+          cat .gitmodules 2>/dev/null || echo "no .gitmodules file"
+          echo "=== Find gradlew anywhere ==="
+          find . -iname "gradlew" 2>/dev/null
+          echo "=== Find android-related folders ==="
+          find . -maxdepth 3 -iname "*android*" 2>/dev/null
