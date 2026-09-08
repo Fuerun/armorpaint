@@ -31,6 +31,18 @@ jobs:
           chmod +x ../base/make
           ../base/make --target android
 
+      - name: Inspect generated Gradle config
+        working-directory: paint/build/ArmorPaint
+        run: |
+          echo "=== gradle-wrapper.properties (if present) ==="
+          cat gradle/wrapper/gradle-wrapper.properties 2>/dev/null || echo "not present"
+          echo "=== root build.gradle / build.gradle.kts ==="
+          cat build.gradle 2>/dev/null || cat build.gradle.kts 2>/dev/null
+          echo "=== app build.gradle / build.gradle.kts ==="
+          cat app/build.gradle 2>/dev/null || cat app/build.gradle.kts 2>/dev/null
+          echo "=== settings.gradle(.kts) ==="
+          cat settings.gradle 2>/dev/null || cat settings.gradle.kts 2>/dev/null
+
       - name: Regenerate Gradle wrapper
         working-directory: paint/build/ArmorPaint
         run: gradle wrapper
