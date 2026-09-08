@@ -1,0 +1,47 @@
+name: Android Build
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Generate Krom build + Android project
+        run: node armorcore/make android -g opengl --shaderversion 300
+
+      - name: Copy assets
+        run: cp -r build/krom/* armorcore/build/ArmorPaint/app/src/main/assets/
+
+      - name: Apply Android patch
+        run: git apply armorcore/patch/android_document_picker.diff --directory=armorcore/Kinc
+
+      - name: Generate Kinc project
+        run: node armorcore/Kinc/make android -g opengl
+
+      - name: Manual kincfile.js fix (see step below)
+        run: sed -i 's/OLD_TEXT/NEW_TEXT/' armorcore/kincfile.js
+
+      - name: Build APK
+        working-directory: armorcore/build/ArmorPaint
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArmorPaint-debug-apk
+          path: armorcore/build/ArmorPaint/app/build/outputs/apk/debug/*.apk
