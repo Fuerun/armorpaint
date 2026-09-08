@@ -7,6 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: armory3d/armortools
           submodules: recursive
 
       - uses: actions/setup-node@v4
@@ -20,28 +21,22 @@ jobs:
 
       - uses: android-actions/setup-android@v3
 
-      - name: Generate Krom build + Android project
-        run: node armorcore/make android -g opengl --shaderversion 300
+      - name: Compile (generates Android Studio project)
+        run: |
+          cd armorpaint
+          ../armorcore/Kinc/make --from ../armorcore android -g opengl
 
-      - name: Copy assets
-        run: cp -r build/krom/* armorcore/build/ArmorPaint/app/src/main/assets/
-
-      - name: Apply Android patch
-        run: git apply armorcore/patch/android_document_picker.diff --directory=armorcore/Kinc
-
-      - name: Generate Kinc project
-        run: node armorcore/Kinc/make android -g opengl
-
-      - name: Manual kincfile.js fix (see step below)
-        run: sed -i 's/OLD_TEXT/NEW_TEXT/' armorcore/kincfile.js
+      - name: Locate generated Gradle project
+        run: find . -maxdepth 5 -iname "gradlew" 2>/dev/null
 
       - name: Build APK
-        working-directory: armorcore/build/ArmorPaint
         run: |
+          GRADLE_DIR=$(dirname "$(find . -maxdepth 5 -iname 'gradlew' | head -n1)")
+          cd "$GRADLE_DIR"
           chmod +x gradlew
           ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
           name: ArmorPaint-debug-apk
-          path: armorcore/build/ArmorPaint/app/build/outputs/apk/debug/*.apk
+          path: '**/app/build/outputs/apk/debug/*.apk'
